@@ -1,0 +1,42 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Local databases and environment files.
+.env
+*.db
+*.sqlite
+*.sqlite3
+
+# Frontend build/dependency output.
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/.env
+
+# Approved datasets and generated artifacts stay out of Git by default.
+ml/data/raw/
+data/raw/
+data/processed/
+ml/artifacts/
+*.csv
+*.tsv
+*.wav
+*.mp3
+*.flac
+*.m4a
+*.ogg
+*.webm
+*.opus
+
+# OS and IDE files.
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

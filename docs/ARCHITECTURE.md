@@ -137,6 +137,18 @@ Responsibilities:
 - provide useful loading and error states;
 - never calculate a clinical value locally without showing its source and version.
 
+### 3.8 Voice capture and datapoint boundary
+
+Voice capture is a product-surface responsibility, while voice validation and feature conversion are Segment A responsibilities.
+
+- Segment B may capture microphone input after consent and send an approved PCM WAV payload.
+- Segment A validates format, duration, sample rate, size, and signal quality in memory.
+- A feature extractor emits a `VoiceDataPoint` with a feature method version and quality flags.
+- The inference adapter consumes the datapoint and returns traceable estimates.
+- Raw audio is not retained by default and must not appear in ordinary logs.
+- The current `demo_signal_proxy_v1` extractor is a demonstration proxy, not a validated biomedical extractor.
+- A future validated extractor may replace the proxy while preserving the datapoint and inference contracts.
+
 ## 4. Domain model
 
 ```text
@@ -205,6 +217,39 @@ Suggested fields:
 - created timestamp;
 - no mutation link to observed records.
 
+### VoiceDataPoint
+
+Suggested fields:
+
+- opaque datapoint ID;
+- canonical 16-feature vector;
+- duration, sample rate, and channel count;
+- feature method version;
+- quality flags;
+- raw-audio-retained flag, which defaults to `false`.
+
+### InferenceResult
+
+Suggested fields:
+
+- datapoint ID and source;
+- estimated Total and Motor UPDRS;
+- model version and feature-set version;
+- inference mode;
+- raw and derived input features for traceability;
+- warnings and quality flags.
+
+### ScenarioPoint
+
+Suggested fields:
+
+- forecast day or timestamp;
+- baseline and simulated Total UPDRS;
+- optional baseline and simulated Motor UPDRS;
+- scenario ID;
+- assumptions version;
+- hypothetical-output warning.
+
 ## 5. Data flow
 
 ```text
@@ -225,6 +270,15 @@ New observation
     -> trajectory recalculation
     -> latest-state update
     -> API response
+
+Voice capture path
+    -> approved PCM WAV payload
+    -> bounded in-memory audio validation
+    -> quality checks
+    -> proxy or validated biomedical feature extraction
+    -> VoiceDataPoint
+    -> inference adapter
+    -> InferenceResult with warnings and model metadata
 ```
 
 ## 6. API contracts
@@ -312,6 +366,7 @@ Processing:
 - Store model and feature versions on each estimate.
 - Store audit events for create, update, simulation, model promotion, and administrative access.
 - Keep derived values recomputable from the immutable event history.
+- Do not persist raw audio in the prototype; persist only approved derived datapoint metadata when needed for reproducibility.
 
 ## 8. Security and privacy
 
@@ -383,6 +438,8 @@ Before implementation, record decisions for:
 - missing-data and outlier policy;
 - uncertainty representation;
 - model promotion criteria;
+- feature-set and audio-extractor promotion criteria;
+- voice payload format, retention, and consent policy;
 - patient-specific tuning procedure;
 - intervention response assumptions;
 - authentication and authorization model;

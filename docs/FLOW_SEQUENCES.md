@@ -45,6 +45,8 @@ Implementation sequence:
 9. Save model, preprocessing, configuration, feature list, code version, source checksum, and metrics together.
 10. Promote the artifact only when leakage and reproducibility checks pass.
 
+The current implementation exposes this sequence through `ml.training.cli`, writes per-approach joblib artifacts, and writes `training-manifest.json`. The raw dataset and generated artifacts remain outside Git.
+
 Required tests:
 
 - schema validation rejects malformed input;
@@ -286,3 +288,59 @@ The demo must show:
 - the non-diagnostic limitation.
 
 No personal names, raw patient data, or unapproved identifiers should appear in the demo, screenshots, logs, or example payloads.
+
+## 11. Voice capture to inference-mode datapoint
+
+```text
+Browser microphone capture
+  -> consent and bounded recording
+  -> approved PCM WAV payload
+  -> in-memory format and quality validation
+  -> proxy or validated feature extraction
+  -> VoiceDataPoint with feature method/version
+  -> InferenceInput
+  -> inference adapter
+  -> InferenceResult with estimates, trace data, and warnings
+```
+
+How to implement:
+
+1. Capture audio only after an explicit user action and consent state.
+2. Enforce a maximum duration and payload size before processing.
+3. Use PCM WAV for the initial contract; do not silently accept arbitrary browser containers.
+4. Process the payload in memory and discard raw bytes after extraction.
+5. Emit duration, sample rate, channel count, feature method, and quality flags.
+6. Keep the current `demo_signal_proxy_v1` output visibly marked as a proxy, not a clinical feature extractor.
+7. Pass quality flags into inference results rather than hiding them.
+8. Return raw and derived datapoints, model version, feature-set version, and warnings for the demo view.
+9. Never put raw audio, real names, or full feature payloads into ordinary logs.
+10. If a validated biomedical extractor replaces the proxy, keep the same datapoint contract and add a new extractor version.
+
+Segment B owns the browser microphone component and API upload. Segment A owns this processing boundary, the feature contract, and inference behavior.
+
+## 12. Multi-scenario simulation and sensitivity flow
+
+```text
+Current twin state and slope
+  -> construct isolated scenario requests
+  -> validate horizon, step, and normalized intensities
+  -> apply versioned assumptions
+  -> calculate baseline and scenario points
+  -> compare scenarios or vary one parameter
+  -> return hypothetical results and warnings
+```
+
+How to implement:
+
+1. Read a consistent snapshot of the current derived twin state.
+2. Build one immutable request per scenario; do not mutate the production twin.
+3. Bound the Levodopa and physical-therapy intensities to the documented normalized range.
+4. Apply a named assumptions version and record it in every result.
+5. Calculate baseline and simulated Total UPDRS, plus Motor UPDRS when available.
+6. Clamp display scores to the supported 0-199 range without hiding that clamping occurred.
+7. Mark all scenario points as hypothetical and non-treatment guidance.
+8. For sensitivity analysis, vary one parameter at a time and keep all other inputs fixed.
+9. Compare final values and deltas against the same baseline trajectory.
+10. Return the assumptions, warnings, and scenario IDs so the UI can explain the result.
+
+The simulator is a visualization and engineering test tool. It must not output a dose, treatment plan, or causal clinical claim.

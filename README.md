@@ -79,8 +79,8 @@ After the shared API, data, and safety contracts are frozen, split the work into
 
 | Branch | Segment | Primary ownership |
 |---|---|---|
-| `codex/segment-a-model-twin` | Model and twin computation | `ml/`, domain logic, inference, trajectory, and simulation math |
-| `codex/segment-b-service-ui` | Service and product surface | REST API, persistence, frontend, infrastructure, and integration harness |
+| `segment-a-model-twin` | Model and twin computation | `ml/`, domain logic, inference, trajectory, and simulation math |
+| `segment-b-service-ui` | Service and product surface | REST API, persistence, frontend, infrastructure, and integration harness |
 
 Segment A publishes a stable inference/trajectory interface and synthetic fixtures. Segment B initially uses those fixtures or a mock adapter, then switches to the real implementation during the final merge. This keeps both branches productive without requiring either contributor to wait for the other.
 
@@ -123,7 +123,10 @@ The complete task split, file ownership, checkpoints, and merge checklist are in
 ├── ml/
 │   ├── data/
 │   ├── features/
+│   ├── inference/
+│   ├── models/
 │   ├── training/
+│   ├── voice/
 │   ├── evaluation/
 │   └── artifacts/
 ├── infra/
@@ -169,6 +172,23 @@ npm run dev
 ```
 
 The project should provide a checked-in `.env.example`, database migrations, a synthetic demo seed command, and a documented way to place the permitted UCI dataset outside version control.
+
+## Segment A training and inference
+
+Install the model dependencies from [requirements.txt](requirements.txt), place the approved UCI CSV under the ignored `data/raw/` directory, and train artifacts with:
+
+```bash
+python3 -m ml.training.cli \
+  --data data/raw/parkinsons_updrs.data \
+  --output ml/artifacts/total \
+  --target total_UPDRS \
+  --feature-mode raw_plus_derived \
+  --split future
+```
+
+Run the same command with `--target motor_UPDRS` for the Motor UPDRS artifact. The pipeline supports future-time and grouped-patient splits, Elastic Net, Random Forest, Histogram Gradient Boosting, and quantile regression. It writes versioned joblib artifacts and a JSON training manifest; raw data and generated artifacts are ignored by Git.
+
+The first real-data results and extractor limitations are recorded in [docs/SEGMENT_A_MODEL_REPORT.md](docs/SEGMENT_A_MODEL_REPORT.md).
 
 ## API summary
 
@@ -224,6 +244,18 @@ The simulator should be an explicit scenario model, not a causal claim. It must:
 
 Until clinically supported response data exists, simulation output must be labeled hypothetical.
 
+### Segment A extensions
+
+Segment A also contains:
+
+- versioned raw-plus-derived feature engineering;
+- an explicit registry of baseline, challenger, uncertainty, personalization, and demo approaches;
+- a deterministic inference-mode adapter for synthetic datapoints;
+- an in-memory PCM WAV path that produces quality-flagged voice datapoints without retaining raw audio;
+- multi-scenario simulation and one-parameter sensitivity analysis.
+
+See [docs/SEGMENT_A_EXTENSIONS.md](docs/SEGMENT_A_EXTENSIONS.md) for the implementation boundary. Browser microphone capture belongs to Segment B; Segment A receives an approved audio payload or an already extracted feature vector.
+
 ## Definition of done
 
 A vertical slice is complete when a user can create a twin, submit a valid update, retrieve a recalculated trajectory, run a simulation, and see the result in the dashboard. The slice is accepted only when:
@@ -243,6 +275,8 @@ A vertical slice is complete when a user can create a twin, submit a valid updat
 - [Project plan, tasks, checkpoints, and acceptance gates](docs/PROJECT_PLAN.md)
 - [System architecture, data contracts, security, and deployment](docs/ARCHITECTURE.md)
 - [Flow sequences for data, API, UI, modeling, simulation, and release](docs/FLOW_SEQUENCES.md)
+- [Segment A extensions: features, approaches, voice datapoints, and simulation](docs/SEGMENT_A_EXTENSIONS.md)
+- [Segment A model results and extractor validation boundary](docs/SEGMENT_A_MODEL_REPORT.md)
 
 ## Known limitations
 
