@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Optional
 import uuid
 
 from sqlalchemy import (
@@ -60,7 +60,7 @@ class TwinRecord(Base):
     owner_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="insufficient_data")
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-    latest_state_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    latest_state_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
     data_quality_summary: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     schema_version: Mapped[str] = mapped_column(String(16), nullable=False, default="v1")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
@@ -79,10 +79,10 @@ class ObservationRecord(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
     twin_id: Mapped[str] = mapped_column(String(36), ForeignKey("twins.id", ondelete="CASCADE"), nullable=False)
     observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    features: Mapped[dict[str, float | None]] = mapped_column(JSON, nullable=False)
+    features: Mapped[dict[str, Optional[float]]] = mapped_column(JSON, nullable=False)
     is_partial: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    observed_total_updrs: Mapped[float | None] = mapped_column(Float, nullable=True)
-    observed_motor_updrs: Mapped[float | None] = mapped_column(Float, nullable=True)
+    observed_total_updrs: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    observed_motor_updrs: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     source: Mapped[str] = mapped_column(String(64), nullable=False, default="api")
     quality_flags: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
@@ -103,13 +103,13 @@ class StateEstimateRecord(Base):
         nullable=False,
         unique=True,
     )
-    estimated_total_updrs: Mapped[float | None] = mapped_column(Float, nullable=True)
-    estimated_motor_updrs: Mapped[float | None] = mapped_column(Float, nullable=True)
-    total_updrs_ci_low: Mapped[float | None] = mapped_column(Float, nullable=True)
-    total_updrs_ci_high: Mapped[float | None] = mapped_column(Float, nullable=True)
-    motor_updrs_ci_low: Mapped[float | None] = mapped_column(Float, nullable=True)
-    motor_updrs_ci_high: Mapped[float | None] = mapped_column(Float, nullable=True)
-    confidence_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    estimated_total_updrs: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    estimated_motor_updrs: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    total_updrs_ci_low: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    total_updrs_ci_high: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    motor_updrs_ci_low: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    motor_updrs_ci_high: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    confidence_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     quality_flags: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     model_version: Mapped[str] = mapped_column(String(64), nullable=False)
     feature_version: Mapped[str] = mapped_column(String(64), nullable=False)
@@ -166,7 +166,7 @@ class AuditEventRecord(Base):
     actor_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     action: Mapped[str] = mapped_column(String(64), nullable=False)
     resource_type: Mapped[str] = mapped_column(String(32), nullable=False)
-    resource_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    resource_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
     outcome: Mapped[str] = mapped_column(String(16), nullable=False)
     details: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)

@@ -27,6 +27,8 @@ services:
       PARKTWIN_CORS_ORIGINS: ${PARKTWIN_CORS_ORIGINS:-http://localhost:5173,http://localhost:3000,http://localhost:8080}
       PARKTWIN_ENGINE_ADAPTER: ${PARKTWIN_ENGINE_ADAPTER:-mock}
       PARKTWIN_REAL_ADAPTER_PATH: ${PARKTWIN_REAL_ADAPTER_PATH:-app.services.adapter:build_real_engine_adapter}
+      PARKTWIN_TOTAL_ARTIFACT_PATH: ${PARKTWIN_TOTAL_ARTIFACT_PATH:-ml/artifacts/total/random_forest-total_UPDRS.joblib}
+      PARKTWIN_MOTOR_ARTIFACT_PATH: ${PARKTWIN_MOTOR_ARTIFACT_PATH:-ml/artifacts/motor/random_forest-motor_UPDRS.joblib}
     ports:
       - "8000:8000"
     depends_on:

@@ -149,7 +149,14 @@ build_engine_adapter(
    ```bash
    PARKTWIN_ENGINE_ADAPTER=real
    PARKTWIN_REAL_ADAPTER_PATH=app.services.adapter:build_real_engine_adapter
+   PARKTWIN_TOTAL_ARTIFACT_PATH=ml/artifacts/total/random_forest-total_UPDRS.joblib
+   PARKTWIN_MOTOR_ARTIFACT_PATH=ml/artifacts/motor/random_forest-motor_UPDRS.joblib
    ```
+
+   The adapter maps Segment B's API key `jitter_abs` to Segment A's canonical
+   `jitter_absolute` feature name. Both promoted artifacts must use the same
+   feature mode and feature-set version; missing or incompatible artifacts fail
+   closed with `MODEL_UNAVAILABLE`.
 4. Start the API and verify `/ready`:
    - `checks.inference_adapter` must report `"ok"`
    - `model_metadata.adapter_type` will automatically switch to `"real"` (and display `[real]` in the React dashboard header!).
