@@ -173,6 +173,23 @@ npm run dev
 
 The project should provide a checked-in `.env.example`, database migrations, a synthetic demo seed command, and a documented way to place the permitted UCI dataset outside version control.
 
+## Segment A training and inference
+
+Install the model dependencies from [requirements.txt](requirements.txt), place the approved UCI CSV under the ignored `data/raw/` directory, and train artifacts with:
+
+```bash
+python3 -m ml.training.cli \
+  --data data/raw/parkinsons_updrs.data \
+  --output ml/artifacts/total \
+  --target total_UPDRS \
+  --feature-mode raw_plus_derived \
+  --split future
+```
+
+Run the same command with `--target motor_UPDRS` for the Motor UPDRS artifact. The pipeline supports future-time and grouped-patient splits, Elastic Net, Random Forest, Histogram Gradient Boosting, and quantile regression. It writes versioned joblib artifacts and a JSON training manifest; raw data and generated artifacts are ignored by Git.
+
+The first real-data results and extractor limitations are recorded in [docs/SEGMENT_A_MODEL_REPORT.md](docs/SEGMENT_A_MODEL_REPORT.md).
+
 ## API summary
 
 | Method | Endpoint | Purpose |
@@ -259,6 +276,7 @@ A vertical slice is complete when a user can create a twin, submit a valid updat
 - [System architecture, data contracts, security, and deployment](docs/ARCHITECTURE.md)
 - [Flow sequences for data, API, UI, modeling, simulation, and release](docs/FLOW_SEQUENCES.md)
 - [Segment A extensions: features, approaches, voice datapoints, and simulation](docs/SEGMENT_A_EXTENSIONS.md)
+- [Segment A model results and extractor validation boundary](docs/SEGMENT_A_MODEL_REPORT.md)
 
 ## Known limitations
 

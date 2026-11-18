@@ -34,6 +34,17 @@ class VoiceDataPoint:
         object.__setattr__(self, "features", MappingProxyType(dict(self.features)))
 
 
+@dataclass(frozen=True)
+class AudioBuffer:
+    """Decoded mono audio with quality metadata and no raw-byte retention."""
+
+    samples: tuple[float, ...]
+    duration_seconds: float
+    sample_rate_hz: int
+    channels: int
+    quality_flags: tuple[str, ...] = ()
+
+
 def _decode_pcm_mono(raw: bytes, sample_width: int, channels: int) -> list[float]:
     if sample_width == 1:
         samples = [(byte - 128) / 128.0 for byte in raw]
@@ -92,18 +103,13 @@ def _proxy_features(samples: list[float]) -> dict[str, float]:
     return {name: float(values[name]) for name in FEATURE_NAMES}
 
 
-def extract_demo_voice_datapoint(
+def decode_pcm_wav(
     wav_bytes: bytes,
     *,
-    datapoint_id: str,
     max_bytes: int = 2_000_000,
     max_duration_seconds: float = 30.0,
-) -> VoiceDataPoint:
-    """Extract a demo datapoint from in-memory PCM WAV bytes.
-
-    Raw bytes are never returned or retained in the result. This function is
-    suitable for local inference demonstrations, not clinical assessment.
-    """
+) -> AudioBuffer:
+    """Decode a bounded PCM WAV payload into an in-memory mono buffer."""
 
     if len(wav_bytes) > max_bytes:
         raise ValueError("audio payload exceeds the configured size limit")
@@ -138,13 +144,41 @@ def extract_demo_voice_datapoint(
     if silence_fraction > 0.80:
         quality_flags.append("HIGH_SILENCE")
 
-    return VoiceDataPoint(
-        datapoint_id=datapoint_id,
-        features=_proxy_features(samples),
+    return AudioBuffer(
+        samples=tuple(samples),
         duration_seconds=duration,
         sample_rate_hz=sample_rate,
         channels=channels,
+        quality_flags=tuple(quality_flags),
+    )
+
+
+def extract_demo_voice_datapoint(
+    wav_bytes: bytes,
+    *,
+    datapoint_id: str,
+    max_bytes: int = 2_000_000,
+    max_duration_seconds: float = 30.0,
+) -> VoiceDataPoint:
+    """Extract a demo datapoint from in-memory PCM WAV bytes.
+
+    Raw bytes are never returned or retained in the result. This function is
+    suitable for local inference demonstrations, not clinical assessment.
+    """
+
+    audio = decode_pcm_wav(
+        wav_bytes,
+        max_bytes=max_bytes,
+        max_duration_seconds=max_duration_seconds,
+    )
+
+    return VoiceDataPoint(
+        datapoint_id=datapoint_id,
+        features=_proxy_features(list(audio.samples)),
+        duration_seconds=audio.duration_seconds,
+        sample_rate_hz=audio.sample_rate_hz,
+        channels=audio.channels,
         feature_method="demo_signal_proxy_v1",
         raw_audio_retained=False,
-        quality_flags=tuple(quality_flags),
+        quality_flags=audio.quality_flags,
     )

@@ -44,12 +44,21 @@ class DataValidationTests(unittest.TestCase):
         self.assertTrue(any(issue.code == "NEGATIVE_VALUE" for issue in issues))
         self.assertTrue(any(issue.code == "OUT_OF_RANGE" for issue in issues))
 
-    def test_dataset_detects_duplicate_patient_time(self) -> None:
+    def test_dataset_detects_exact_duplicate_row(self) -> None:
         report = validate_dataset([valid_row(), valid_row()], require_targets=True)
 
         self.assertFalse(report.is_valid)
         self.assertEqual(report.row_count, 2)
-        self.assertTrue(any(issue.code == "DUPLICATE_OBSERVATION" for issue in report.issues))
+        self.assertTrue(any(issue.code == "DUPLICATE_ROW" for issue in report.issues))
+
+    def test_same_patient_time_is_allowed_when_features_differ(self) -> None:
+        first = valid_row()
+        second = valid_row()
+        second["Jitter(%)"] = 0.2
+
+        report = validate_dataset([first, second], require_targets=True)
+
+        self.assertTrue(report.is_valid)
 
     def test_inference_rows_may_omit_targets(self) -> None:
         row = valid_row()

@@ -7,6 +7,7 @@ import unittest
 import wave
 
 from ml.voice.audio import extract_demo_voice_datapoint
+from ml.voice.biomedical import extract_biomedical_voice_datapoint, validate_against_reference
 
 
 def sine_wave_bytes(duration_seconds: float = 1.0, sample_rate: int = 16_000) -> bytes:
@@ -47,6 +48,16 @@ class VoiceAudioTests(unittest.TestCase):
 
         self.assertIn("LOW_SIGNAL", datapoint.quality_flags)
         self.assertIn("HIGH_SILENCE", datapoint.quality_flags)
+
+    def test_research_biomedical_extractor_returns_all_features(self) -> None:
+        datapoint = extract_biomedical_voice_datapoint(sine_wave_bytes(1.5), datapoint_id="biomed-1")
+
+        self.assertEqual(len(datapoint.features), 16)
+        self.assertEqual(datapoint.feature_method, "research_acoustic_v1_approx")
+        self.assertFalse(datapoint.raw_audio_retained)
+        self.assertIn("RPDE_APPROXIMATION", datapoint.quality_flags)
+        report = validate_against_reference(datapoint.features, datapoint.features)
+        self.assertTrue(report.is_valid)
 
 
 if __name__ == "__main__":

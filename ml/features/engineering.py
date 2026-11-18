@@ -79,6 +79,8 @@ def build_feature_vector(
 ) -> FeatureVector:
     """Build a stable raw-plus-derived feature vector without mutating input."""
 
+    if not include_raw and not include_derived:
+        raise ValueError("at least one of include_raw or include_derived must be true")
     raw = _require_numeric_features(row)
     output: dict[str, float] = dict(raw) if include_raw else {}
 
@@ -93,8 +95,8 @@ def build_feature_vector(
                 "jitter_family_std": _standard_deviation(jitter_values, jitter_mean),
                 "shimmer_family_mean": shimmer_mean,
                 "shimmer_family_std": _standard_deviation(shimmer_values, shimmer_mean),
-                "perturbation_ratio": jitter_mean / max(shimmer_mean, _EPSILON),
-                "harmonicity_ratio": raw["hnr"] / max(raw["nhr"], _EPSILON),
+                "perturbation_ratio": math.log1p(jitter_mean / max(shimmer_mean, _EPSILON)),
+                "harmonicity_ratio": raw["hnr"] / max(1.0 + raw["nhr"], _EPSILON),
                 "nonlinear_complexity_mean": _mean((raw["rpde"], raw["dfa"], raw["ppe"])),
                 "log1p_jitter_percent": math.log1p(raw["jitter_percent"]),
                 "log1p_shimmer": math.log1p(raw["shimmer"]),
@@ -102,4 +104,10 @@ def build_feature_vector(
         )
 
     flags = ("DERIVED_FEATURES_INCLUDED",) if include_derived else ()
-    return FeatureVector(features=output, quality_flags=flags)
+    if include_raw and include_derived:
+        version = "feature-set-v1-derived-v1"
+    elif include_raw:
+        version = "feature-set-v1-raw-v1"
+    else:
+        version = "feature-set-v1-derived-only-v1"
+    return FeatureVector(features=output, feature_set_version=version, quality_flags=flags)

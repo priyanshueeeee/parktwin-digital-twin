@@ -8,6 +8,7 @@ from .schema import (
     TEST_TIME_COLUMN,
     TOTAL_UPDRS_COLUMN,
 )
+from .loader import DatasetValidationError, load_rows, load_uci_telemonitoring_csv
 from .validation import ValidationIssue, ValidationReport, canonicalize_row, validate_dataset, validate_row
 
 __all__ = [
@@ -17,6 +18,9 @@ __all__ = [
     "SUBJECT_COLUMN",
     "TEST_TIME_COLUMN",
     "TOTAL_UPDRS_COLUMN",
+    "DatasetValidationError",
+    "load_rows",
+    "load_uci_telemonitoring_csv",
     "ValidationIssue",
     "ValidationReport",
     "canonicalize_row",

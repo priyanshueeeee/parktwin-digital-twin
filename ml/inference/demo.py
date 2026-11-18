@@ -29,8 +29,8 @@ class InferenceInput:
 @dataclass(frozen=True)
 class InferenceResult:
     datapoint_id: str
-    estimated_total_updrs: float
-    estimated_motor_updrs: float
+    estimated_total_updrs: float | None
+    estimated_motor_updrs: float | None
     model_version: str
     feature_set_version: str
     mode: str
@@ -38,6 +38,7 @@ class InferenceResult:
     input_features: Mapping[str, float]
     derived_features: Mapping[str, float]
     warnings: tuple[str, ...]
+    prediction_interval: tuple[float, float] | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "input_features", MappingProxyType(dict(self.input_features)))

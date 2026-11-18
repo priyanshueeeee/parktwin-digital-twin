@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
+from numbers import Real
 from typing import Any, Iterable, Mapping
 
 from .schema import (
@@ -40,7 +41,7 @@ class ValidationReport:
 
 
 def _is_number(value: Any) -> bool:
-    return isinstance(value, (int, float)) and not isinstance(value, bool)
+    return isinstance(value, Real) and not isinstance(value, bool)
 
 
 def _validate_number(
@@ -121,7 +122,6 @@ def validate_row(
         TEST_TIME_COLUMN,
         row_index=row_index,
         issues=issues,
-        non_negative=True,
     )
 
     for spec in FEATURE_SPECS:
@@ -156,28 +156,31 @@ def validate_dataset(
     *,
     require_targets: bool = True,
 ) -> ValidationReport:
-    """Validate rows and detect duplicate patient/time observations."""
+    """Validate rows and detect exact duplicate observations.
+
+    Multiple recordings may legitimately share a patient's ``test_time`` in
+    the source dataset, so patient/time alone is not a unique row key.
+    """
 
     issues: list[ValidationIssue] = []
     row_count = 0
-    seen_keys: dict[tuple[Any, Any], int] = {}
+    seen_rows: dict[tuple[tuple[str, str], ...], int] = {}
 
     for row_count, row in enumerate(rows, start=1):
         row_index = row_count - 1
         issues.extend(validate_row(row, row_index=row_index, require_targets=require_targets))
 
-        if SUBJECT_COLUMN in row and TEST_TIME_COLUMN in row:
-            key = (row[SUBJECT_COLUMN], row[TEST_TIME_COLUMN])
-            if key in seen_keys:
-                issues.append(
-                    ValidationIssue(
-                        f"{SUBJECT_COLUMN},{TEST_TIME_COLUMN}",
-                        "DUPLICATE_OBSERVATION",
-                        f"duplicates row {seen_keys[key]}",
-                        row_index,
-                    )
+        row_key = tuple(sorted((str(key), repr(value)) for key, value in row.items()))
+        if row_key in seen_rows:
+            issues.append(
+                ValidationIssue(
+                    "row",
+                    "DUPLICATE_ROW",
+                    f"duplicates row {seen_rows[row_key]}",
+                    row_index,
                 )
-            else:
-                seen_keys[key] = row_index
+            )
+        else:
+            seen_rows[row_key] = row_index
 
     return ValidationReport(row_count=row_count, issues=tuple(issues))

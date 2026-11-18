@@ -34,7 +34,8 @@ FEATURE_SPECS: tuple[FeatureSpec, ...] = (
     FeatureSpec("shimmer_apq11", "Shimmer:APQ11", non_negative=True),
     FeatureSpec("shimmer_dda", "Shimmer:DDA", non_negative=True),
     FeatureSpec("nhr", "NHR", non_negative=True),
-    FeatureSpec("hnr", "HNR", non_negative=True),
+    # HNR is measured in decibels and can be negative for noisy signals.
+    FeatureSpec("hnr", "HNR"),
     FeatureSpec("rpde", "RPDE", non_negative=True),
     FeatureSpec("dfa", "DFA", non_negative=True),
     FeatureSpec("ppe", "PPE", non_negative=True),

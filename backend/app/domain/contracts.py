@@ -64,6 +64,8 @@ class TrajectoryPoint:
     source_type: str
     scenario_id: str | None = None
     quality_flags: tuple[str, ...] = ()
+    observed_motor_updrs: float | None = None
+    estimated_motor_updrs: float | None = None
 
 
 @dataclass(frozen=True)

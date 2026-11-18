@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Approved datasets and generated artifacts stay out of Git by default.
+data/raw/
+data/processed/
+ml/artifacts/
+*.wav
+*.webm
+*.opus

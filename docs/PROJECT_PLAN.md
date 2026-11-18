@@ -111,6 +111,8 @@ Segment A checkpoint:
 - Simulation math cannot mutate observed state.
 - The inference/trajectory adapter passes its contract tests.
 
+The current implementation also includes the trained model pipeline, artifact loader, trained inference adapter, research acoustic extractor, reference comparison, trajectory engine, and bounded personalization layer. See [docs/SEGMENT_A_MODEL_REPORT.md](SEGMENT_A_MODEL_REPORT.md) for the first approved-data run.
+
 ### Segment A extension track
 
 These capabilities are part of Segment A and should be developed behind stable contracts:

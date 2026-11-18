@@ -12,8 +12,8 @@ Segment A now covers more than the original baseline model path. It provides a c
 | Deterministic inference demo | Implemented | `ml/inference/demo.py` |
 | In-memory WAV datapoint extraction | Implemented as a demo proxy | `ml/voice/audio.py` |
 | Versioned multi-scenario simulation | Implemented | `backend/app/services/simulation.py` |
-| Trained Elastic Net/tree/quantile models | Next implementation step | Requires modeling dependencies and approved data |
-| Validated biomedical speech extractor | Future implementation | Requires a separately evaluated extractor |
+| Trained Elastic Net/tree/quantile models | Implemented | Training pipeline, metrics, manifests, and joblib artifacts |
+| Research biomedical speech extractor | Implemented as evaluation-ready | `research_acoustic_v1_approx`; clinical validation still requires reference audio/features |
 | Browser microphone recording | Segment B integration | Captures audio and sends an approved format to Segment A |
 
 ## 1. Expanded feature engineering
@@ -157,15 +157,17 @@ The prototype assumes that interventions alter a progression slope and may have 
 - Sensitivity analysis varies one parameter at a time.
 - No output recommends a dose, treatment, or clinical action.
 
-## 6. Next implementation stages
+## 6. Completed implementation stages
 
-1. Add leakage-safe patient/time splitting.
-2. Add a training pipeline with Elastic Net baseline and one tree challenger.
-3. Add model artifact metadata and a real inference adapter interface.
-4. Add uncertainty evaluation and interval output.
-5. Replace the proxy voice features only after a separately documented extractor evaluation.
-6. Add Segment B browser capture and API upload using the capture contract.
-7. Add end-to-end tests from a synthetic audio fixture to the dashboard.
+1. Leakage-safe patient/time splitting is implemented.
+2. Elastic Net, tree, and quantile training is implemented.
+3. Model artifact metadata, joblib serialization, and trained inference are implemented.
+4. Quantile interval output and coverage metrics are implemented.
+5. A research acoustic extractor and reference-comparison harness are implemented.
+6. Segment B browser capture and API upload remain integration work.
+7. End-to-end audio-to-dashboard testing remains integration work.
+
+The UCI tabular file is sufficient for model training but does not validate the audio extractor because it contains precomputed feature columns rather than raw audio. The extractor therefore remains evaluation-ready, not clinically validated.
 
 ## 7. Acceptance criteria
 

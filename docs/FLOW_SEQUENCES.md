@@ -45,6 +45,8 @@ Implementation sequence:
 9. Save model, preprocessing, configuration, feature list, code version, source checksum, and metrics together.
 10. Promote the artifact only when leakage and reproducibility checks pass.
 
+The current implementation exposes this sequence through `ml.training.cli`, writes per-approach joblib artifacts, and writes `training-manifest.json`. The raw dataset and generated artifacts remain outside Git.
+
 Required tests:
 
 - schema validation rejects malformed input;

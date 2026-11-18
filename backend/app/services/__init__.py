@@ -9,6 +9,8 @@ from .simulation import (
     simulate_scenario,
     simulate_scenarios,
 )
+from .personalization import CalibrationResult, apply_calibration, fit_bounded_residual_calibration
+from .trajectory import TrajectoryResult, calculate_trajectory
 
 __all__ = [
     "InterventionAssumptions",
@@ -18,4 +20,9 @@ __all__ = [
     "sensitivity_analysis",
     "simulate_scenario",
     "simulate_scenarios",
+    "CalibrationResult",
+    "TrajectoryResult",
+    "apply_calibration",
+    "calculate_trajectory",
+    "fit_bounded_residual_calibration",
 ]
