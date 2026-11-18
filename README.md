@@ -79,8 +79,8 @@ After the shared API, data, and safety contracts are frozen, split the work into
 
 | Branch | Segment | Primary ownership |
 |---|---|---|
-| `codex/segment-a-model-twin` | Model and twin computation | `ml/`, domain logic, inference, trajectory, and simulation math |
-| `codex/segment-b-service-ui` | Service and product surface | REST API, persistence, frontend, infrastructure, and integration harness |
+| `segment-a-model-twin` | Model and twin computation | `ml/`, domain logic, inference, trajectory, and simulation math |
+| `segment-b-service-ui` | Service and product surface | REST API, persistence, frontend, infrastructure, and integration harness |
 
 Segment A publishes a stable inference/trajectory interface and synthetic fixtures. Segment B initially uses those fixtures or a mock adapter, then switches to the real implementation during the final merge. This keeps both branches productive without requiring either contributor to wait for the other.
 

@@ -48,15 +48,15 @@ Create the branches from that commit:
 
 ```bash
 git switch main
-git switch -c codex/segment-a-model-twin
+git switch -c segment-a-model-twin
 
 git switch main
-git switch -c codex/segment-b-service-ui
+git switch -c segment-b-service-ui
 ```
 
 ### Segment A - Model and twin computation
 
-**Branch:** `codex/segment-a-model-twin`
+**Branch:** `segment-a-model-twin`
 
 **Goal:** Build the data pipeline, UPDRS estimator, twin state rules, trajectory engine, and isolated simulation math.
 
@@ -102,7 +102,7 @@ Segment A checkpoint:
 
 ### Segment B - Service and product surface
 
-**Branch:** `codex/segment-b-service-ui`
+**Branch:** `segment-b-service-ui`
 
 **Goal:** Build persistence, REST endpoints, dashboard behavior, local deployment, and the integration harness around the frozen contracts.
 
@@ -163,14 +163,14 @@ Merge Segment A first because it provides the real inference, trajectory, and si
 
 ```bash
 git switch main
-git merge --no-ff codex/segment-a-model-twin
+git merge --no-ff segment-a-model-twin
 
 # Update Segment B from main, replace its mock adapter, and rerun its tests.
-git switch codex/segment-b-service-ui
+git switch segment-b-service-ui
 git merge main
 
 git switch main
-git merge --no-ff codex/segment-b-service-ui
+git merge --no-ff segment-b-service-ui
 ```
 
 If a shared contract conflict appears, stop the merge and resolve the contract on `main` first. Do not resolve it by making the API, model, and UI silently disagree.
@@ -215,7 +215,7 @@ Decision: create both feature branches only if the contracts are stable.
 
 ### Checkpoint 2A - Segment A model and twin baseline
 
-Review on `codex/segment-a-model-twin`.
+Review on `segment-a-model-twin`.
 
 - Dataset validation report complete.
 - Leakage-safe split verified.
@@ -228,7 +228,7 @@ Decision: publish the adapter and model metadata so Segment B can replace its mo
 
 ### Checkpoint 2B - Segment B service and UI baseline
 
-Review on `codex/segment-b-service-ui`.
+Review on `segment-b-service-ui`.
 
 - Twin creation, update, trajectory retrieval, and simulation endpoints are callable.
 - Persistence and error behavior work with the mock adapter.
