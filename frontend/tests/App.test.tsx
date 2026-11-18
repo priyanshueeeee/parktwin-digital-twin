@@ -225,6 +225,22 @@ function createMockClient(): ParkTwinClient {
   };
 
   return {
+    getReady: vi.fn().mockResolvedValue({
+      request_id: 'req-ready-1',
+      schema_version: 'v1',
+      data: {
+        status: 'ready',
+        checks: { database: 'ok', inference_adapter: 'ok' },
+        model_metadata: {
+          model_version: 'mock-updrs-v0.1.0',
+          feature_version: 'speech16-v1',
+          assumptions_version: 'sim-assumptions-mock-v1',
+          adapter_type: 'mock',
+          artifact_checksum: 'abcdef1234567890',
+        },
+      },
+      warnings: [],
+    }),
     listTwins: vi.fn().mockResolvedValue({
       request_id: 'req-list-1',
       schema_version: 'v1',
@@ -247,11 +263,40 @@ function createMockClient(): ParkTwinClient {
       },
       warnings: [],
     }),
-    getTrajectory: vi.fn().mockImplementation((twinId: string) =>
+    getTrajectory: vi.fn().mockImplementation((twinId: string, opts?: { scenarioId?: string }) =>
       Promise.resolve({
         request_id: `req-traj-${twinId}`,
         schema_version: 'v1',
-        data: trajectoryByTwin[twinId],
+        data: {
+          ...trajectoryByTwin[twinId],
+          calibration_summary:
+            twinId === 'twin-1'
+              ? {
+                  paired_total_count: 1,
+                  paired_motor_count: 1,
+                  total_updrs_mae: 0.2,
+                  motor_updrs_mae: 0.1,
+                  total_updrs_mean_bias: 0.2,
+                }
+              : undefined,
+          scenario: opts?.scenarioId
+            ? {
+                id: simResponse.scenario_id,
+                label: simResponse.label,
+                hypothetical: true,
+                assumptions_version: simResponse.assumptions_version,
+                model_version: simResponse.model_version,
+                baseline_twin_version: simResponse.baseline_twin_version,
+                parameters: simResponse.parameters,
+                horizon_days: simResponse.horizon_days,
+                step_days: simResponse.step_days,
+                baseline_series: simResponse.baseline_series,
+                scenario_series: simResponse.scenario_series,
+                summary: simResponse.summary,
+                created_at: simResponse.created_at,
+              }
+            : null,
+        },
         warnings:
           twinId === 'twin-1'
             ? ['SPARSE_LONGITUDINAL_HISTORY: Interpret slope cautiously.']
@@ -264,6 +309,127 @@ function createMockClient(): ParkTwinClient {
       data: simResponse,
       warnings: ['HYPOTHETICAL_SCENARIO: Not clinical advice.'],
     }),
+    listScenarios: vi.fn().mockResolvedValue({
+      request_id: 'req-scen-list',
+      schema_version: 'v1',
+      data: {
+        twin_id: 'twin-1',
+        scenarios: [
+          {
+            scenario_id: simResponse.scenario_id,
+            label: simResponse.label,
+            hypothetical: true,
+            parameters: simResponse.parameters,
+            horizon_days: simResponse.horizon_days,
+            step_days: simResponse.step_days,
+            assumptions_version: simResponse.assumptions_version,
+            model_version: simResponse.model_version,
+            baseline_twin_version: simResponse.baseline_twin_version,
+            summary: simResponse.summary,
+            created_at: simResponse.created_at,
+          },
+        ],
+        disclaimer: 'Research prototype only: non-diagnostic.',
+      },
+      warnings: [],
+    }),
+    listObservations: vi.fn().mockResolvedValue({
+      request_id: 'req-obs-list',
+      schema_version: 'v1',
+      data: {
+        twin_id: 'twin-1',
+        external_reference: 'SYN-PT-1001',
+        count: 1,
+        biomarker_deltas: [
+          {
+            feature: 'hnr',
+            baseline: 22.8,
+            latest: 20.1,
+            delta: -2.7,
+            percent_change: -11.8,
+          },
+        ],
+        observations: [
+          {
+            id: 'obs-1',
+            observed_at: '2026-10-15T12:00:00+00:00',
+            is_partial: false,
+            source: 'synthetic_seed',
+            observed_total_updrs: 31.0,
+            observed_motor_updrs: 23.0,
+            estimated_total_updrs: 31.2,
+            estimated_motor_updrs: 23.1,
+            confidence_score: 0.9,
+            model_version: 'mock-updrs-v0.1.0',
+            feature_version: 'speech16-v1',
+            quality_flags: [],
+            features: {
+              jitter_percent: 0.005,
+              jitter_abs: 0.00003,
+              jitter_rap: 0.002,
+              jitter_ppq5: 0.002,
+              jitter_ddp: 0.006,
+              shimmer: 0.03,
+              shimmer_db: 0.28,
+              shimmer_apq3: 0.015,
+              shimmer_apq5: 0.017,
+              shimmer_apq11: 0.022,
+              shimmer_dda: 0.045,
+              nhr: 0.02,
+              hnr: 20.1,
+              rpde: 0.5,
+              dfa: 0.7,
+              ppe: 0.2,
+            },
+          },
+        ],
+        disclaimer: 'Research prototype only: non-diagnostic.',
+      },
+      warnings: [],
+    }),
+    listAuditEvents: vi.fn().mockResolvedValue({
+      request_id: 'req-audit-list',
+      schema_version: 'v1',
+      data: {
+        twin_id: 'twin-1',
+        count: 1,
+        events: [
+          {
+            id: 'aud-1',
+            request_id: 'req-create-1',
+            actor_id: 'clinician-demo-01',
+            action: 'twin.create',
+            resource_type: 'twin',
+            resource_id: 'twin-1',
+            outcome: 'success',
+            details: { status: 'active' },
+            created_at: '2026-10-01T12:00:00+00:00',
+          },
+        ],
+        disclaimer: 'Research prototype only: non-diagnostic.',
+      },
+      warnings: [],
+    }),
+    updateTwinStatus: vi.fn().mockResolvedValue({
+      request_id: 'req-status-1',
+      schema_version: 'v1',
+      data: {
+        twin: { ...twinList.twins[0], status: 'paused', version: 3 },
+        previous_status: 'active',
+        reason: 'Clinician review hold',
+      },
+      warnings: [],
+    }),
+    recomputeTwin: vi.fn().mockResolvedValue({
+      request_id: 'req-recompute-1',
+      schema_version: 'v1',
+      data: {
+        twin: { ...twinList.twins[0], version: 3 },
+        reestimated_observations: 2,
+      },
+      warnings: [],
+    }),
+    exportTwin: vi.fn().mockResolvedValue('# Non-diagnostic\ntimestamp,total\n'),
   };
 }
 
@@ -312,6 +478,46 @@ describe('ParkTwin Dashboard Critical Path', () => {
       expect(screen.getByText(/No plottable UPDRS series yet/i)).toBeInTheDocument();
     });
     expect(screen.getAllByText(/Insufficient Data/i).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('navigates biomarkers, saved scenario overlay, and governance audit tabs', async () => {
+    const user = userEvent.setup();
+    const client = createMockClient();
+    render(<App client={client} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/API Ready/i)).toBeInTheDocument();
+    });
+    expect(screen.getByText(/Paired Observed vs Est\. MAE/i)).toBeInTheDocument();
+
+    // Voice Biomarkers tab
+    await user.click(screen.getByRole('tab', { name: /Voice Biomarkers/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Acoustic Biomarker Drift/i)).toBeInTheDocument();
+    });
+    expect(screen.getByText(/-11\.8%/i)).toBeInTheDocument();
+
+    // Saved Scenarios tab -> Overlay on Chart returns to overview with simulated series
+    await user.click(screen.getByRole('tab', { name: /Saved Scenarios/i }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Overlay on Chart/i })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole('button', { name: /Overlay on Chart/i }));
+    await waitFor(() => {
+      expect(screen.getByTestId('simulated-series-line')).toBeInTheDocument();
+    });
+
+    // Governance & Audit tab -> verify audit trail & pause lifecycle call
+    await user.click(screen.getByRole('tab', { name: /Governance, Export & Audit/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Redacted Audit Trail/i)).toBeInTheDocument();
+    });
+    expect(screen.getByText('twin.create')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /Pause Twin/i }));
+    await waitFor(() => {
+      expect(client.updateTwinStatus).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('displays API connection errors with request ID and retry button', async () => {

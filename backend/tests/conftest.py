@@ -54,6 +54,7 @@ def make_test_settings(
         rate_limit_window_seconds=rate_limit_window_seconds,
         cors_origins=["http://localhost:5173"],
         engine_adapter="mock",
+        real_adapter_path="app.services.adapter:build_real_engine_adapter",
         stale_days_threshold=30,
     )
 

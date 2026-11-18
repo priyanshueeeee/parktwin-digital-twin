@@ -26,6 +26,7 @@ services:
       PARKTWIN_API_KEYS: ${PARKTWIN_API_KEYS:-dev-clinician-key:clinician-demo-01:clinician,dev-admin-key:admin-demo-01:admin,dev-readonly-key:viewer-demo-01:readonly}
       PARKTWIN_CORS_ORIGINS: ${PARKTWIN_CORS_ORIGINS:-http://localhost:5173,http://localhost:3000,http://localhost:8080}
       PARKTWIN_ENGINE_ADAPTER: ${PARKTWIN_ENGINE_ADAPTER:-mock}
+      PARKTWIN_REAL_ADAPTER_PATH: ${PARKTWIN_REAL_ADAPTER_PATH:-app.services.adapter:build_real_engine_adapter}
     ports:
       - "8000:8000"
     depends_on:

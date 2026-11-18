@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 import hashlib
+import importlib
 import math
 from typing import Any, Protocol
 
@@ -527,12 +528,40 @@ class MockTwinEngineAdapter:
         )
 
 
-def build_engine_adapter(adapter_name: str = "mock") -> TwinEnginePort:
+def build_engine_adapter(
+    adapter_name: str = "mock",
+    *,
+    real_adapter_path: str = "app.services.adapter:build_real_engine_adapter",
+) -> TwinEnginePort:
     """Factory returning the active TwinEnginePort implementation.
 
-    During final integration with Segment A, register `real` here pointing to
-    Segment A's inference/trajectory/simulation adapter.
+    Supports:
+      - `mock`: deterministic prototype adapter bundled with Segment B.
+      - `real`: dynamically loads Segment A's adapter via `module.path:callable_or_class`
+        (default `app.services.adapter:build_real_engine_adapter`), failing closed if
+        the artifact or module cannot be loaded.
     """
     if adapter_name == "mock":
         return MockTwinEngineAdapter(available=True)
-    raise ValueError(f"Unsupported engine adapter '{adapter_name}'. Expected 'mock'.")
+    if adapter_name == "real":
+        if ":" not in real_adapter_path:
+            raise ModelUnavailableError(
+                f"Invalid PARKTWIN_REAL_ADAPTER_PATH '{real_adapter_path}'. Expected 'module:symbol'."
+            )
+        module_name, symbol_name = real_adapter_path.split(":", 1)
+        try:
+            module = importlib.import_module(module_name)
+            factory = getattr(module, symbol_name)
+            adapter = factory() if callable(factory) else factory
+        except Exception as exc:
+            raise ModelUnavailableError(
+                f"Failed to load Segment A real adapter '{real_adapter_path}': {exc.__class__.__name__}"
+            ) from exc
+        required = ("is_available", "get_model_metadata", "infer", "compute_trajectory", "simulate")
+        missing = [attr for attr in required if not hasattr(adapter, attr)]
+        if missing:
+            raise ModelUnavailableError(
+                f"Loaded real adapter is missing TwinEnginePort methods: {', '.join(missing)}"
+            )
+        return adapter
+    raise ValueError(f"Unsupported engine adapter '{adapter_name}'. Expected 'mock' or 'real'.")

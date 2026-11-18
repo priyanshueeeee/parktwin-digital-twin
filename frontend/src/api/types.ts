@@ -156,6 +156,100 @@ export interface SimulationData {
   disclaimer: string;
 }
 
+export interface CalibrationSummary {
+  paired_total_count: number;
+  paired_motor_count: number;
+  total_updrs_mae: number | null;
+  motor_updrs_mae: number | null;
+  total_updrs_mean_bias: number | null;
+}
+
+export interface ReadinessData {
+  status: 'ready' | 'not_ready';
+  checks: {
+    database: string;
+    inference_adapter: string;
+  };
+  model_metadata: ModelMetadata | null;
+}
+
+export interface ScenarioListItem {
+  scenario_id: string;
+  label: string;
+  hypothetical: true;
+  parameters: SimulationParameters;
+  horizon_days: number;
+  step_days: number;
+  assumptions_version: string;
+  model_version: string;
+  baseline_twin_version: number;
+  summary: SimulationSummary;
+  created_at: string;
+}
+
+export interface BiomarkerDelta {
+  feature: SpeechFeatureKey;
+  baseline: number;
+  latest: number;
+  delta: number;
+  percent_change: number | null;
+}
+
+export interface ObservationLogItem {
+  id: string;
+  observed_at: string;
+  is_partial: boolean;
+  source: string;
+  observed_total_updrs: number | null;
+  observed_motor_updrs: number | null;
+  estimated_total_updrs: number | null;
+  estimated_motor_updrs: number | null;
+  confidence_score: number | null;
+  model_version: string | null;
+  feature_version: string | null;
+  quality_flags: string[];
+  features: PartialSpeechFeatures;
+}
+
+export interface ObservationsData {
+  twin_id: string;
+  external_reference: string;
+  count: number;
+  biomarker_deltas: BiomarkerDelta[];
+  observations: ObservationLogItem[];
+  disclaimer: string;
+}
+
+export interface AuditEventItem {
+  id: string;
+  request_id: string;
+  actor_id: string;
+  action: string;
+  resource_type: string;
+  resource_id: string | null;
+  outcome: string;
+  details: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface AuditTrailData {
+  twin_id: string;
+  count: number;
+  events: AuditEventItem[];
+  disclaimer: string;
+}
+
+export interface TwinStatusUpdatePayload {
+  status: 'active' | 'paused' | 'archived';
+  reason: string;
+  expected_version: number;
+}
+
+export interface RecomputePayload {
+  re_run_inference: boolean;
+  reason: string;
+}
+
 export interface TrajectoryData {
   twin: TwinRecord;
   series_filter: 'all' | 'observed' | 'estimated';
@@ -178,6 +272,7 @@ export interface TrajectoryData {
   } | null;
   slope: SlopeSummary;
   coverage: DataCoverage;
+  calibration_summary?: CalibrationSummary;
   quality_flags: string[];
   model_metadata: ModelMetadata;
   disclaimer: string;

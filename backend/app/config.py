@@ -34,6 +34,7 @@ class Settings:
     rate_limit_window_seconds: int
     cors_origins: list[str]
     engine_adapter: str
+    real_adapter_path: str
     stale_days_threshold: int
 
 
@@ -83,6 +84,10 @@ def load_settings() -> Settings:
         rate_limit_window_seconds=int(os.getenv("PARKTWIN_RATE_LIMIT_WINDOW_SECONDS", "60")),
         cors_origins=[origin.strip() for origin in raw_origins.split(",") if origin.strip()],
         engine_adapter=os.getenv("PARKTWIN_ENGINE_ADAPTER", "mock"),
+        real_adapter_path=os.getenv(
+            "PARKTWIN_REAL_ADAPTER_PATH",
+            "app.services.adapter:build_real_engine_adapter",
+        ),
         stale_days_threshold=int(os.getenv("PARKTWIN_STALE_DAYS_THRESHOLD", "30")),
     )
 

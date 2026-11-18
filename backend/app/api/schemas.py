@@ -231,6 +231,20 @@ class SimulationRequest(StrictModel):
         return self
 
 
+class TwinStatusUpdateRequest(StrictModel):
+    status: Literal["active", "paused", "archived"]
+    reason: str = Field(default="Clinical review lifecycle update", min_length=3, max_length=256)
+    expected_version: int = Field(..., ge=1, description="Required twin version for optimistic concurrency.")
+
+
+class RecomputeRequest(StrictModel):
+    re_run_inference: bool = Field(
+        default=True,
+        description="When true, re-runs active model inference over immutable observations without altering raw observations.",
+    )
+    reason: str = Field(default="Derived state recomputation", min_length=3, max_length=256)
+
+
 # --- Response schemas ---
 
 

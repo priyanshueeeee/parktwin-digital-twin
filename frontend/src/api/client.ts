@@ -1,13 +1,19 @@
 import type {
   ApiEnvelope,
   ApiErrorEnvelope,
+  AuditTrailData,
   FieldValidationError,
+  ObservationsData,
+  ReadinessData,
+  RecomputePayload,
+  ScenarioListItem,
   SimulationData,
   SimulationPayload,
   TrajectoryData,
   TwinCreatePayload,
   TwinListData,
   TwinRecord,
+  TwinStatusUpdatePayload,
   TwinUpdatePayload,
 } from './types';
 
@@ -42,6 +48,7 @@ function generateIdempotencyKey(prefix: string): string {
 }
 
 export interface ParkTwinClient {
+  getReady(): Promise<ApiEnvelope<ReadinessData>>;
   listTwins(): Promise<ApiEnvelope<TwinListData>>;
   createTwin(
     payload: TwinCreatePayload,
@@ -59,6 +66,20 @@ export interface ParkTwinClient {
     },
   ): Promise<ApiEnvelope<TrajectoryData>>;
   simulate(twinId: string, payload: SimulationPayload): Promise<ApiEnvelope<SimulationData>>;
+  listScenarios(
+    twinId: string,
+  ): Promise<ApiEnvelope<{ twin_id: string; scenarios: ScenarioListItem[]; disclaimer: string }>>;
+  listObservations(twinId: string): Promise<ApiEnvelope<ObservationsData>>;
+  listAuditEvents(twinId: string): Promise<ApiEnvelope<AuditTrailData>>;
+  updateTwinStatus(
+    twinId: string,
+    payload: TwinStatusUpdatePayload,
+  ): Promise<ApiEnvelope<{ twin: TwinRecord; previous_status: string; reason: string }>>;
+  recomputeTwin(
+    twinId: string,
+    payload: RecomputePayload,
+  ): Promise<ApiEnvelope<{ twin: TwinRecord; reestimated_observations: number }>>;
+  exportTwin(twinId: string, format: 'json' | 'csv', scenarioId?: string): Promise<string>;
 }
 
 export class HttpParkTwinClient implements ParkTwinClient {
@@ -128,6 +149,10 @@ export class HttpParkTwinClient implements ParkTwinClient {
     return body as ApiEnvelope<T>;
   }
 
+  getReady(): Promise<ApiEnvelope<ReadinessData>> {
+    return this.request<ReadinessData>('/ready', { method: 'GET' });
+  }
+
   listTwins(): Promise<ApiEnvelope<TwinListData>> {
     return this.request<TwinListData>('/twins', { method: 'GET' });
   }
@@ -177,5 +202,64 @@ export class HttpParkTwinClient implements ParkTwinClient {
       method: 'POST',
       body: JSON.stringify(payload),
     });
+  }
+
+  listScenarios(
+    twinId: string,
+  ): Promise<ApiEnvelope<{ twin_id: string; scenarios: ScenarioListItem[]; disclaimer: string }>> {
+    return this.request(`/twin/${encodeURIComponent(twinId)}/scenarios`, { method: 'GET' });
+  }
+
+  listObservations(twinId: string): Promise<ApiEnvelope<ObservationsData>> {
+    return this.request<ObservationsData>(`/twin/${encodeURIComponent(twinId)}/observations`, {
+      method: 'GET',
+    });
+  }
+
+  listAuditEvents(twinId: string): Promise<ApiEnvelope<AuditTrailData>> {
+    return this.request<AuditTrailData>(`/twin/${encodeURIComponent(twinId)}/audit`, {
+      method: 'GET',
+    });
+  }
+
+  updateTwinStatus(
+    twinId: string,
+    payload: TwinStatusUpdatePayload,
+  ): Promise<ApiEnvelope<{ twin: TwinRecord; previous_status: string; reason: string }>> {
+    return this.request(`/twin/${encodeURIComponent(twinId)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  recomputeTwin(
+    twinId: string,
+    payload: RecomputePayload,
+  ): Promise<ApiEnvelope<{ twin: TwinRecord; reestimated_observations: number }>> {
+    return this.request(`/twin/${encodeURIComponent(twinId)}/recompute`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async exportTwin(twinId: string, format: 'json' | 'csv', scenarioId?: string): Promise<string> {
+    const params = new URLSearchParams({ format });
+    if (scenarioId) params.set('scenario_id', scenarioId);
+    const resp = await fetch(
+      `${this.baseUrl}/twin/${encodeURIComponent(twinId)}/export?${params.toString()}`,
+      {
+        method: 'GET',
+        headers: { 'X-API-Key': this.apiKey },
+      },
+    );
+    if (!resp.ok) {
+      throw new ParkTwinApiError({
+        status: resp.status,
+        code: `HTTP_${resp.status}`,
+        message: 'Failed to export twin trajectory.',
+        requestId: resp.headers.get('X-Request-ID') ?? 'unknown',
+      });
+    }
+    return resp.text();
   }
 }

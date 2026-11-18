@@ -346,3 +346,68 @@ class TwinRepository:
         self.session.add(event)
         self.session.flush()
         return event
+
+    def list_audit_events(self, twin_id: str, *, limit: int = 100) -> list[AuditEventRecord]:
+        stmt = (
+            select(AuditEventRecord)
+            .where(
+                (AuditEventRecord.resource_id == twin_id)
+                | (AuditEventRecord.action == "twin.simulate")
+            )
+            .order_by(AuditEventRecord.created_at.desc())
+            .limit(limit * 2)
+        )
+        events = list(self.session.scalars(stmt).all())
+        filtered = [
+            ev
+            for ev in events
+            if ev.resource_id == twin_id or (ev.details or {}).get("twin_id") == twin_id
+        ]
+        return filtered[:limit]
+
+    def replace_state_estimate_for_recompute(
+        self,
+        *,
+        observation_id: str,
+        twin_id: str,
+        estimated_total_updrs: float | None,
+        estimated_motor_updrs: float | None,
+        total_updrs_ci_low: float | None,
+        total_updrs_ci_high: float | None,
+        motor_updrs_ci_low: float | None,
+        motor_updrs_ci_high: float | None,
+        confidence_score: float | None,
+        quality_flags: list[str],
+        model_version: str,
+        feature_version: str,
+    ) -> StateEstimateRecord:
+        """Recompute derived estimate for an immutable observation (never alters observation)."""
+        stmt = select(StateEstimateRecord).where(StateEstimateRecord.observation_id == observation_id)
+        existing = self.session.scalars(stmt).first()
+        if existing is None:
+            return self.append_state_estimate(
+                twin_id=twin_id,
+                observation_id=observation_id,
+                estimated_total_updrs=estimated_total_updrs,
+                estimated_motor_updrs=estimated_motor_updrs,
+                total_updrs_ci_low=total_updrs_ci_low,
+                total_updrs_ci_high=total_updrs_ci_high,
+                motor_updrs_ci_low=motor_updrs_ci_low,
+                motor_updrs_ci_high=motor_updrs_ci_high,
+                confidence_score=confidence_score,
+                quality_flags=quality_flags,
+                model_version=model_version,
+                feature_version=feature_version,
+            )
+        existing.estimated_total_updrs = estimated_total_updrs
+        existing.estimated_motor_updrs = estimated_motor_updrs
+        existing.total_updrs_ci_low = total_updrs_ci_low
+        existing.total_updrs_ci_high = total_updrs_ci_high
+        existing.motor_updrs_ci_low = motor_updrs_ci_low
+        existing.motor_updrs_ci_high = motor_updrs_ci_high
+        existing.confidence_score = confidence_score
+        existing.quality_flags = quality_flags
+        existing.model_version = model_version
+        existing.feature_version = feature_version
+        self.session.flush()
+        return existing

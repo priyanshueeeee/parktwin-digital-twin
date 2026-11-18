@@ -1,0 +1,49 @@
+name: Segment B CI (API, Persistence, Dashboard)
+
+on:
+  push:
+    branches: [segment-b-service-ui, main]
+  pull_request:
+    branches: [main, segment-b-service-ui]
+
+jobs:
+  backend-contract-and-integration:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Install backend dependencies
+        run: pip install -r requirements.txt
+      - name: Run contract, integration, and Alembic migration tests
+        run: pytest
+      - name: Verify vertical-slice demo and 500 ms latency target
+        working-directory: .
+        run: python infra/scripts/run_demo.py --in-process
+
+  frontend-typecheck-test-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: TypeScript strict typecheck
+        run: npm run typecheck
+      - name: Run Vitest component and critical-path tests
+        run: npm test
+      - name: Production Vite build
+        run: npm run build

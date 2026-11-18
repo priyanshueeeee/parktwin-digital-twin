@@ -35,7 +35,10 @@ def create_app(
     """Create a configured FastAPI application instance."""
     cfg = settings or load_settings()
     db = database or Database(cfg.database_url)
-    adapter = engine_adapter or build_engine_adapter(cfg.engine_adapter)
+    adapter = engine_adapter or build_engine_adapter(
+        cfg.engine_adapter,
+        real_adapter_path=cfg.real_adapter_path,
+    )
     metrics = MetricsRegistry()
     rate_limiter = SlidingWindowRateLimiter(
         max_requests=cfg.rate_limit_requests,
@@ -71,9 +74,9 @@ def create_app(
         CORSMiddleware,
         allow_origins=cfg.cors_origins,
         allow_credentials=True,
-        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type", "Idempotency-Key", "X-API-Key", "X-Request-ID"],
-        expose_headers=["X-Request-ID"],
+        expose_headers=["X-Request-ID", "X-Process-Time-Ms", "Server-Timing", "Content-Disposition"],
     )
 
     @app.middleware("http")
@@ -81,6 +84,7 @@ def create_app(
         request_id = request.headers.get("X-Request-ID") or f"req-{uuid.uuid4().hex[:16]}"
         request.state.request_id = request_id
         request.state.actor_id = None
+        request.state.stage_timings_ms = {}
         start = time.perf_counter()
 
         # Payload size protection
@@ -120,6 +124,16 @@ def create_app(
         response = await call_next(request)
         latency_ms = (time.perf_counter() - start) * 1000.0
         response.headers["X-Request-ID"] = request_id
+        response.headers["X-Process-Time-Ms"] = f"{latency_ms:.2f}"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Cache-Control"] = "no-store"
+
+        stage_timings: dict[str, float] = getattr(request.state, "stage_timings_ms", {})
+        timing_parts = [f"{k};dur={v:.2f}" for k, v in stage_timings.items()]
+        timing_parts.append(f"total;dur={latency_ms:.2f}")
+        response.headers["Server-Timing"] = ", ".join(timing_parts)
 
         route_obj = request.scope.get("route")
         endpoint_label = getattr(route_obj, "path", request.url.path)
