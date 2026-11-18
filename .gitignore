@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Local databases & env
+.env
+*.db
+*.sqlite
+*.sqlite3
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/.env
+
+# Raw datasets & audio (privacy / no-raw-data Git policy)
+ml/data/raw/
+data/raw/
+*.csv
+*.tsv
+*.wav
+*.mp3
+*.flac
+*.m4a
+*.ogg
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

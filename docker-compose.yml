@@ -1,0 +1,54 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-parktwin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-parktwin}
+      POSTGRES_DB: ${POSTGRES_DB:-parktwin}
+    ports:
+      - "5432:5432"
+    volumes:
+      - parktwin_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-parktwin} -d ${POSTGRES_DB:-parktwin}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/backend.Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-parktwin}:${POSTGRES_PASSWORD:-parktwin}@db:5432/${POSTGRES_DB:-parktwin}
+      PARKTWIN_ENV: ${PARKTWIN_ENV:-development}
+      PARKTWIN_AUTH_ENABLED: ${PARKTWIN_AUTH_ENABLED:-true}
+      PARKTWIN_API_KEYS: ${PARKTWIN_API_KEYS:-dev-clinician-key:clinician-demo-01:clinician,dev-admin-key:admin-demo-01:admin,dev-readonly-key:viewer-demo-01:readonly}
+      PARKTWIN_CORS_ORIGINS: ${PARKTWIN_CORS_ORIGINS:-http://localhost:5173,http://localhost:3000,http://localhost:8080}
+      PARKTWIN_ENGINE_ADAPTER: ${PARKTWIN_ENGINE_ADAPTER:-mock}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/ready')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  frontend:
+    build:
+      context: .
+      dockerfile: infra/docker/frontend.Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+        VITE_API_KEY: ${VITE_API_KEY:-dev-clinician-key}
+    ports:
+      - "8080:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  parktwin_pgdata:
