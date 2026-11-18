@@ -1,1 +1,1 @@
-"""Application domain and service components."""
+"""ParkTwin backend application package."""

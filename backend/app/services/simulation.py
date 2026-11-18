@@ -79,12 +79,10 @@ def _validate_request(request: SimulationRequest, assumptions: InterventionAssum
         raise ValueError("horizon_days must be between 1 and 730")
     if request.step_days < 1 or request.step_days > 30 or request.step_days > request.horizon_days:
         raise ValueError("step_days must be between 1 and horizon_days, and no more than 30")
-    for name, value in (
-        ("levodopa_intensity", request.levodopa_intensity),
-        ("physical_therapy_intensity", request.physical_therapy_intensity),
-    ):
-        if not 0 <= value <= 1:
-            raise ValueError(f"{name} must be between 0 and 1")
+    if not -0.5 <= request.levodopa_intensity <= 1:
+        raise ValueError("levodopa_intensity must be between -0.5 and 1")
+    if not 0 <= request.physical_therapy_intensity <= 1:
+        raise ValueError("physical_therapy_intensity must be between 0 and 1")
     if assumptions.response_time_days <= 0:
         raise ValueError("response_time_days must be positive")
 
@@ -174,8 +172,9 @@ def sensitivity_analysis(
     baseline_final = baseline.points[-1].baseline_total_updrs
     points: list[SensitivityPoint] = []
     for level in levels:
-        if not 0 <= level <= 1:
-            raise ValueError("sensitivity levels must be between 0 and 1")
+        lower_bound = -0.5 if parameter == "levodopa_intensity" else 0.0
+        if not lower_bound <= level <= 1:
+            raise ValueError(f"sensitivity levels must be between {lower_bound} and 1")
         scenario_request = replace(request, **{parameter: level})
         result = simulate_scenario(scenario_request, assumptions=assumptions)
         final_value = result.points[-1].simulated_total_updrs
