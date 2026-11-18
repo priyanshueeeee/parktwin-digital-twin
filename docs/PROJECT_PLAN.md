@@ -77,17 +77,24 @@ Tasks:
 
 - Validate the dataset shape, types, missingness, ranges, duplicates, patient identifiers, and timestamps.
 - Implement feature preparation for jitter, shimmer, NHR, HNR, RPDE, and the remaining metrics.
+- Implement versioned raw-plus-derived feature sets and ablation-ready feature groups.
+- Add quality features and quality flags without silently replacing invalid source data.
 - Build grouped and time-aware train/validation/test splits by patient.
 - Train an interpretable regression baseline for Total and Motor UPDRS.
 - Train at least one challenger model and compare metrics and error distributions.
+- Register additional approaches for uncertainty, personalization, and deterministic demo inference.
 - Persist preprocessing and model artifacts with model version and training-data checksum.
 - Implement deterministic batch and single-observation inference.
+- Implement an inference-mode adapter that returns datapoint, feature, model, and warning metadata.
+- Add an in-memory voice payload boundary that emits quality-flagged datapoints without retaining raw audio.
 - Implement twin state transitions for initialization, update, stale data, invalid data, and insufficient history.
 - Implement chronological UPDRS series and documented `ΔUPDRS/Δt` calculation.
 - Add minimum-history, data-quality, uncertainty, and confidence rules.
 - Implement patient-specific tuning only behind a versioned feature flag and evaluation report.
 - Implement isolated intervention response functions for the simulation service.
+- Support multiple scenario comparison and one-parameter sensitivity analysis.
 - Add deterministic fixtures for flat, worsening, improving, missing, duplicate, and out-of-order series.
+- Add synthetic audio fixtures for inference-mode demonstrations.
 - Publish a small adapter or mock contract that Segment B can call without importing training code.
 - Provide model metadata, example responses, and a regression test report for the merge.
 
@@ -96,9 +103,23 @@ Segment A checkpoint:
 - No patient leakage is detected.
 - Training can be repeated from the same inputs with consistent metadata and metrics.
 - Inference rejects invalid feature values.
+- Feature-set versions and quality flags are present in inference results.
+- Demo inference is deterministic and visibly non-clinical.
+- Voice datapoints do not retain raw audio by default.
 - State and slope calculations match hand-checked fixtures.
+- Multi-scenario and sensitivity outputs are reproducible.
 - Simulation math cannot mutate observed state.
 - The inference/trajectory adapter passes its contract tests.
+
+### Segment A extension track
+
+These capabilities are part of Segment A and should be developed behind stable contracts:
+
+- **Feature experiments:** raw-only, derived-only, and raw-plus-derived matrices with a feature-set version.
+- **Approach comparison:** Elastic Net baseline, tree challengers, quantile uncertainty, bounded personalization, and a demo-only heuristic.
+- **Inference mode:** synthetic datapoint and in-memory voice payload paths that return traceable estimates and warnings.
+- **Simulation depth:** multiple isolated scenarios, bounded intervention intensities, assumptions versioning, and sensitivity analysis.
+- **Audio boundary:** Segment B captures voice; Segment A validates approved PCM WAV input or receives an extracted feature vector. Raw audio retention remains off by default.
 
 ### Segment B - Service and product surface
 
@@ -279,6 +300,7 @@ Decision: release as a research prototype only, or return specific failed gates 
 - **Safety:** the system never presents simulation output as observed clinical evidence.
 - **Performance:** the documented vertical slice meets the 500 ms trajectory recalculation target under prototype load.
 - **Observability:** every estimate and simulation is traceable to a model version, feature version, request ID, and timestamp.
+- **Inference transparency:** demo or proxy outputs are visibly labeled and include source, feature method, and quality warnings.
 - **Usability:** a new reviewer can complete the demo after reading the README.
 
 ## Risks and mitigations
@@ -287,6 +309,7 @@ Decision: release as a research prototype only, or return specific failed gates 
 |---|---|---|
 | Patient leakage in validation | Inflated performance | Grouped patient-level and time-aware splits with automated checks |
 | Recording or feature quality variation | Unstable estimates | Quality flags, validation thresholds, and visible insufficient-data states |
+| Raw voice retention or unsafe capture | Privacy exposure | In-memory processing, bounded PCM input, no raw-audio retention by default, and explicit capture policy |
 | Sparse longitudinal history | Misleading slope | Minimum-history rules and uncertainty display |
 | Simulation interpreted as treatment advice | Safety harm | Hypothetical labeling, range checks, disclaimers, and no clinical recommendations |
 | Model artifact drift | Inconsistent results | Version every artifact and store its metadata with each estimate |

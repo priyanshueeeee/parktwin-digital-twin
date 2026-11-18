@@ -123,7 +123,10 @@ The complete task split, file ownership, checkpoints, and merge checklist are in
 ├── ml/
 │   ├── data/
 │   ├── features/
+│   ├── inference/
+│   ├── models/
 │   ├── training/
+│   ├── voice/
 │   ├── evaluation/
 │   └── artifacts/
 ├── infra/
@@ -224,6 +227,18 @@ The simulator should be an explicit scenario model, not a causal claim. It must:
 
 Until clinically supported response data exists, simulation output must be labeled hypothetical.
 
+### Segment A extensions
+
+Segment A also contains:
+
+- versioned raw-plus-derived feature engineering;
+- an explicit registry of baseline, challenger, uncertainty, personalization, and demo approaches;
+- a deterministic inference-mode adapter for synthetic datapoints;
+- an in-memory PCM WAV path that produces quality-flagged voice datapoints without retaining raw audio;
+- multi-scenario simulation and one-parameter sensitivity analysis.
+
+See [docs/SEGMENT_A_EXTENSIONS.md](docs/SEGMENT_A_EXTENSIONS.md) for the implementation boundary. Browser microphone capture belongs to Segment B; Segment A receives an approved audio payload or an already extracted feature vector.
+
 ## Definition of done
 
 A vertical slice is complete when a user can create a twin, submit a valid update, retrieve a recalculated trajectory, run a simulation, and see the result in the dashboard. The slice is accepted only when:
@@ -243,6 +258,7 @@ A vertical slice is complete when a user can create a twin, submit a valid updat
 - [Project plan, tasks, checkpoints, and acceptance gates](docs/PROJECT_PLAN.md)
 - [System architecture, data contracts, security, and deployment](docs/ARCHITECTURE.md)
 - [Flow sequences for data, API, UI, modeling, simulation, and release](docs/FLOW_SEQUENCES.md)
+- [Segment A extensions: features, approaches, voice datapoints, and simulation](docs/SEGMENT_A_EXTENSIONS.md)
 
 ## Known limitations
 
